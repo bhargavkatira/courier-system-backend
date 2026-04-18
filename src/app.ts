@@ -3,6 +3,7 @@ import express from "express";
 import { connectDB } from "./config/db";
 import { redisConnection } from "./config/redis";
 import orderRoutes from "./routes/ order.routes";
+import trackingRoutes from "./routes/tracking.routes";
 
 
 dotenv.config();
@@ -30,3 +31,5 @@ app.listen(port, () => {
 });
 
 app.use("/api", orderRoutes);
+
+app.use("/api/tracking", trackingRoutes);

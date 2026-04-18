@@ -8,6 +8,7 @@ const baseURI = process.env.URBAN_EBOLT_BASE_URL;
 const worker = new Worker(
   "orderQueue",
   async (job) => {
+    
     const { orderId } = job.data;
 
     console.log("Processing order:", orderId);
