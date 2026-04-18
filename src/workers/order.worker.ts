@@ -4,6 +4,7 @@ import { redisConnection } from "../config/redis";
 import Order from "../models/order.model";
 import { getToken } from "../services/urbanebolt/auth.service";
 
+const baseURI = process.env.URBAN_EBOLT_BASE_URL;
 const worker = new Worker(
   "orderQueue",
   async (job) => {
@@ -16,17 +17,10 @@ const worker = new Worker(
 
     let token = await getToken();
 
-    const payload = [
-      {
-        ...order.payload,
-        orderNumber: order.orderNumber
-      }
-    ];
-
     try {
       const res = await axios.post(
-        "https://uat.urbanebolt.in/api/v1/services/manifest/",
-        payload,
+       `${baseURI}/services/manifest/`,
+        order.payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -35,13 +29,18 @@ const worker = new Worker(
         }
       );
 
-      console.log("Urbanebolt response:", res.data);
 
-      order.status = "IN_TRANSIT";
+      // 🔥 UPDATE ORDER
+      order.status =
+        res.data?.successResponse?.[0]?.status || "IN_TRANSIT";
+
       order.trackingId =
-        res?.data?.data?.[0]?.awbNumber || "TRK_" + Date.now();
+        res.data?.successResponse?.[0]?.awbNumber ||
+        "TRK_" + Date.now();
 
       await order.save();
+
+      console.log("Order saved:", order._id);
 
     } catch (err: any) {
       if (err.response?.status === 401) {
@@ -51,20 +50,23 @@ const worker = new Worker(
 
         token = await getToken();
 
-        // retry once
         const retry = await axios.post(
-          "https://uat.urbanebolt.in/api/v1/services/manifest/",
-          payload,
+          `${baseURI}/services/manifest/`,
+          order.payload,
           {
             headers: {
-              Authorization: `Bearer ${token}`
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json"
             }
           }
         );
 
-        order.status = "IN_TRANSIT";
+        order.status =
+          retry.data?.successResponse?.[0]?.status || "IN_TRANSIT";
+
         order.trackingId =
-          retry?.data?.data?.[0]?.awbNumber || "TRK_" + Date.now();
+          retry.data?.successResponse?.[0]?.awbNumber ||
+          "TRK_" + Date.now();
 
         await order.save();
         return;

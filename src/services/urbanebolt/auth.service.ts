@@ -1,5 +1,3 @@
-// src/services/urbanebolt/auth.service.ts
-
 import axios from "axios";
 import { redisConnection } from "../../config/redis";
 
@@ -31,7 +29,6 @@ export const isTokenExpired = (): boolean => {
 
 export const getToken = async (): Promise<string> => {
   const existingToken = await getStoredToken();
-  console.log(existingToken, 34)
   if (existingToken) return existingToken;
 
   const res = await axios.post(
@@ -49,8 +46,6 @@ export const getToken = async (): Promise<string> => {
 
   const newToken = res.data.access_token;
 
-  // store for 24 hours
-  console.log(newToken, 45);
 
   await redisConnection.set("test_key", "hello");
   const val = await redisConnection.get("test_key");

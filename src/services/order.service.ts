@@ -1,86 +1,112 @@
-import axios from "axios";
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 import { redisConnection } from "../config/redis";
 import Order from "../models/order.model";
+import { orderQueue } from "../queues/order.queue";
 import { getToken } from "./urbanebolt/auth.service";
+const baseURI = process.env.URBAN_EBOLT_BASE_URL;
 
-export const generateShortId = (): string => {
-  return Math.floor(10000 + Math.random() * 90000).toString();
+
+export const generateUUID = (): string => {
+  return uuidv4();
 };
-
 export const createOrder = async (order: any) => {
-  let token = await getToken();
-    const PREFIX = "UATTESTUEBCUS";
+  console.log("Incoming data:", order);
 
-    const shortId = generateShortId();
-    const orderNumber = shortId;
-    const payload = [
+  const token = await getToken();
+
+  const shortId = generateUUID();
+  const orderNumber = shortId;
+
+  const payload = [
     {
-        ...order,          // spread object correctly
-        orderNumber: `${PREFIX}${shortId}`
+      ...order,
+      orderNumber
     }
-    ];
-    const createOrder = await Order.create({
-        userId: order.customerCode,
-        status: "CREATED",
-        orderNumber : orderNumber,
-        payload: payload
-    });
+  ];
+
+  // ✅ Save in DB
+  const savedOrder = await Order.create({
+    userId: order.customerCode || "guest",
+    status: "CREATED",
+    orderNumber,
+    payload
+  });
+
+  console.log("Saved Order:", savedOrder);
+
+  // ✅ Push to queue (FIXED)
+  await orderQueue.add("processOrder", {
+    orderId: savedOrder._id.toString()
+  });
     
- 
-  try {
-    const res = await axios.post(
-      "https://uat.urbanebolt.in/api/v1/services/manifest/",
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
+  return savedOrder;
 
-    createOrder.status = res.data.successResponse[0].status;
-    console.log(order.status);
-    createOrder.trackingId =
-      res.data.successResponse[0].awbNumber || "TRK_" + Date.now();
 
-    await createOrder.save();
-        
-    return createOrder;
+//   // ❗ OPTIONAL: remove below API call later (move to worker)
+//   try {
+//     const res = await axios.post(
+//       `${baseURI}/services/manifest/`,
+//       payload,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           "Content-Type": "application/json"
+//         }
+//       }
+//     );
 
-  } catch (err: any) {
-    // 🔥 Token expired → retry
-    if (err.response?.status === 401) {
-      console.log("Token expired, refreshing...");
+//     savedOrder.status = res.data.successResponse?.[0]?.status || "IN_TRANSIT";
 
-      await redisConnection.del("ub_token");
+//     savedOrder.trackingId =
+//       res.data.successResponse?.[0]?.awbNumber || "TRK_" + Date.now();
 
-      token = await getToken();
+//     await savedOrder.save();
 
-      const retry = await axios.post(
-        "https://uat.urbanebolt.in/api/v1/services/manifest/",
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        }
-      );
+//     return savedOrder;
 
-      return retry.data;
-    }
+//   } catch (err: any) {
+//     if (err.response?.status === 401) {
+//       console.log("Token expired, refreshing...");
 
-    console.error("Urbanebolt error:", err.response?.data || err.message);
-    throw err;
-  }
+//       await redisConnection.del("ub_token");
+
+//       const newToken = await getToken();
+
+//       const retry = await axios.post(
+//         `${baseURI}/services/manifest/`,
+//         payload,
+//         {
+//           headers: {
+//             Authorization: `Bearer ${newToken}`,
+//             "Content-Type": "application/json"
+//           }
+//         }
+//       );
+
+//       savedOrder.status =
+//         retry.data.successResponse?.[0]?.status || "IN_TRANSIT";
+
+//       savedOrder.trackingId =
+//         retry.data.successResponse?.[0]?.awbNumber || "TRK_" + Date.now();
+
+//       await savedOrder.save();
+
+//       return savedOrder;
+//     }
+
+//     console.error("Urbanebolt error:", err.response?.data || err.message);
+
+//     savedOrder.status = "FAILED";
+//     await savedOrder.save();
+
+//     throw err;
+//   }
 };
 
 export const getOrderById = async (id: string) => {
   const cacheKey = `order:${id}`;
 
-  // 🔹 1. Check cache
   const cached = await redisConnection.get(cacheKey);
   if (cached) {
     console.log("Cache hit ✅");
