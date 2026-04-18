@@ -2,9 +2,8 @@ import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { redisConnection } from "../config/redis";
 import Order from "../models/order.model";
-import { orderQueue } from "../queues/order.queue";
+import { orderQueue } from "./queue.service";
 import { getToken } from "./urbanebolt/auth.service";
-const baseURI = process.env.URBAN_EBOLT_BASE_URL;
 
 
 export const generateUUID = (): string => {
@@ -15,9 +14,9 @@ export const createOrder = async (order: any) => {
 
   const token = await getToken();
 
-  const shortId = generateUUID();
-  const orderNumber = shortId;
+  const orderNumber = generateUUID();;
 
+  // add validator, implicitly add data
   const payload = [
     {
       ...order,
@@ -25,83 +24,20 @@ export const createOrder = async (order: any) => {
     }
   ];
 
-  // ✅ Save in DB
   const savedOrder = await Order.create({
     userId: order.customerCode || "guest",
-    status: "CREATED",
     orderNumber,
     payload
   });
 
   console.log("Saved Order:", savedOrder);
 
-  // ✅ Push to queue (FIXED)
   await orderQueue.add("processOrder", {
     orderId: savedOrder._id.toString()
   });
     
   return savedOrder;
 
-
-//   // ❗ OPTIONAL: remove below API call later (move to worker)
-//   try {
-//     const res = await axios.post(
-//       `${baseURI}/services/manifest/`,
-//       payload,
-//       {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//           "Content-Type": "application/json"
-//         }
-//       }
-//     );
-
-//     savedOrder.status = res.data.successResponse?.[0]?.status || "IN_TRANSIT";
-
-//     savedOrder.trackingId =
-//       res.data.successResponse?.[0]?.awbNumber || "TRK_" + Date.now();
-
-//     await savedOrder.save();
-
-//     return savedOrder;
-
-//   } catch (err: any) {
-//     if (err.response?.status === 401) {
-//       console.log("Token expired, refreshing...");
-
-//       await redisConnection.del("ub_token");
-
-//       const newToken = await getToken();
-
-//       const retry = await axios.post(
-//         `${baseURI}/services/manifest/`,
-//         payload,
-//         {
-//           headers: {
-//             Authorization: `Bearer ${newToken}`,
-//             "Content-Type": "application/json"
-//           }
-//         }
-//       );
-
-//       savedOrder.status =
-//         retry.data.successResponse?.[0]?.status || "IN_TRANSIT";
-
-//       savedOrder.trackingId =
-//         retry.data.successResponse?.[0]?.awbNumber || "TRK_" + Date.now();
-
-//       await savedOrder.save();
-
-//       return savedOrder;
-//     }
-
-//     console.error("Urbanebolt error:", err.response?.data || err.message);
-
-//     savedOrder.status = "FAILED";
-//     await savedOrder.save();
-
-//     throw err;
-//   }
 };
 
 export const getOrderById = async (id: string) => {

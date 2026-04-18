@@ -1,13 +1,13 @@
 import axios from "axios";
+import config from "../../config";
 import { redisConnection } from "../../config/redis";
 
 let token: string | null = null;
 let tokenExpiry: number = 0;
-let baseURI = process.env.URBAN_EBOLT_BASE_URL
-
+const baseURL = config.BASE_URL;
 
 export const setToken = async (token: string, expiresIn: number) => {
-  console.log("🔥 setToken called");
+  console.log("setToken called");
 
   const res = await redisConnection.set(
     "ub_token",
@@ -32,7 +32,7 @@ export const getToken = async (): Promise<string> => {
   if (existingToken) return existingToken;
 
   const res = await axios.post(
-    "https://uat.urbanebolt.in/api/v1/auth/getToken/",
+    `${baseURL}/auth/getToken/`,
     {
       username: process.env.UB_USERNAME,
       password: process.env.UB_PASSWORD

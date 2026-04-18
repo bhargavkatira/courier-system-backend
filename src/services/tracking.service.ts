@@ -1,10 +1,12 @@
 import axios from "axios";
+import config from "../config";
 import { redisConnection } from "../config/redis";
-import { trackingQueue } from "../queues/tracking.queue";
+
+const BaseURL = config.BASE_URL;
 
 export const getTracking = async (awb: string) => {
   const cacheKey = `tracking:${awb}`;
-
+   
   // 🔥 1. Check cache
   const cached = await redisConnection.get(cacheKey);
 
@@ -15,13 +17,22 @@ export const getTracking = async (awb: string) => {
 
   console.log("Cache MISS");
 
-  // 🔥 2. Push job to worker instead of calling API
-  await trackingQueue.add("fetchTracking", { awb });
+// add try and catch
+const res = await axios.get(
+      `${BaseURL}/services/tracking-pub/?awb=${awb}`
+    );
 
+    const data = res.data;
+
+    await redisConnection.set(
+      `tracking:${awb}`,
+      JSON.stringify(data),
+      "EX",
+      6 * 60 * 60
+    );
   // 🔥 3. Return immediate response
   return {
-    status: "PROCESSING",
-    message: "Tracking is being fetched",
+    data : data,
     awb
   };
 };

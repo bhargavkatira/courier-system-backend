@@ -4,7 +4,6 @@ import { createOrder, getOrderById } from "../services/order.service";
 export const createOrderController = async (req: Request, res: Response) => {
   try {
     const order = await createOrder(req.body);
-    // console.log("SUCCESS ORDER:", order._id);
     res.status(201).json(order);
   } catch (err: any) {
     console.error(err);

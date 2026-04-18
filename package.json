@@ -5,8 +5,6 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --poll src/app.ts",
-    "worker": "ts-node-dev --respawn --transpile-only src/workers/order.worker.ts",
-    "tracking-worker": "ts-node-dev --respawn --transpile-only src/workers/tracking.worker.ts",
     "build": "tsc",
     "start": "node dist/app.js"
   },
@@ -23,6 +21,8 @@
   "homepage": "https://github.com/bhargavkatira/courier-system-backend#readme",
   "type": "commonjs",
   "dependencies": {
+    "@bull-board/api": "^7.0.0",
+    "@bull-board/express": "^7.0.0",
     "autocannon": "^8.0.0",
     "axios": "^1.15.0",
     "bullmq": "^5.74.1",
