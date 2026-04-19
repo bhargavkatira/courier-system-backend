@@ -32,7 +32,7 @@ A scalable backend system for **Order Management, Shipment Tracking, and Cancell
 Create a `.env` file in root:
 
 ```env
-will attach .env file to the email
+have attach .env file to the email
 ```
 
 ---
@@ -45,52 +45,34 @@ will attach .env file to the email
 npm install
 ```
 
----
+#### Option B: Docker Setup
 
-### 2️⃣ Start MongoDB
-
-#### Option A: Local Mongo
+🔨 Build Docker Image
 
 ```bash
-mongod
+    docker build -t courier-app .
 ```
+ Run Docker Container
 
-#### Option B: Docker
-
-```bash
-docker run -d -p 27017:27017 --name mongo mongo
+ ```bash
+docker run -d -p 3001:3000 --env-file .env --name courier-app-container courier-app
 ```
-
----
 
 ### 3️⃣ Start Redis
 
-#### Option A: Local
 
-```bash
-redis-server
-```
-
-#### Option B: Docker
-
-```bash
-docker run -d -p 6379:6379 --name redis redis
-```
-
----
 
 ### 4️⃣ Run the application
 
 ```bash
-npm run dev
+npm run start
 ```
 
 👉 Server will start on:
 
 ```text
-http://localhost:3000
+    http://localhost:3000
 ```
-
 ---
 
 ## 📡 API Endpoints
@@ -100,7 +82,6 @@ http://localhost:3000
 ```http
 POST /api/orders
 ```
-
 ---
 
 ### 🔹 Get Order by ID / OrderNumber
@@ -108,7 +89,6 @@ POST /api/orders
 ```http
 GET /api/orders/:id
 ```
-
 ---
 
 ### 🔹 Get Order by AWB
@@ -116,7 +96,6 @@ GET /api/orders/:id
 ```http
 GET /api/orders/awb/:awb
 ```
-
 ---
 
 ### 🔹 Cancel Shipment
@@ -124,7 +103,6 @@ GET /api/orders/awb/:awb
 ```http
 POST /api/cancel
 ```
-
 ---
 
 ### 🔹 Tracking Sync
@@ -132,82 +110,18 @@ POST /api/cancel
 ```http
 GET /api/tracking/:awb
 ```
-
 ---
 
-## ⚡ Redis Caching
-
-* Cache Key:
-
-```text
-order:awb:<awb>
-token : ub_token
-```
-
-* Strategy:
-
-```text
-Cache Aside Pattern
-```
-
----
-
-## 📦 Queue (BullMQ)
-
-* Used for async processing (order creation, tracking updates)
-* Dashboard:
 
 ```text
 http://localhost:3000/admin/queues
 ```
-
----
-
-## 🐳 Docker Setup (Recommended)
-
-### Run Mongo + Redis
-
-```bash
-docker network create courier-net
-```
-
-
-
-### Run App
-
-```bash
-docker build -t courier-app .
-docker run -d -p 3000:3000 --network courier-net courier-app
-```
-
----
-
-## 🔍 Debugging Tips
-
-* Check Redis keys:
+--
 
 ```bash
 redis-cli
 keys order:awb:*
 ```
-
-* Check logs:
-
-```bash
-Cache hit ✅
-Cache miss ❌
-```
-
----
-
-## ⚠️ Notes
-
-* Do **not pass `_id` manually** while creating order
-* Use **unique `orderNumber`**
-* Ensure Redis and Mongo are running before starting app
-
----
-
 
 ## 👨‍💻 Author
 
