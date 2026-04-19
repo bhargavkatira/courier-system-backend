@@ -21,7 +21,6 @@ async function startWorker() {
     try {
         await connectDB();
         console.log("✅ MongoDB connected for worker");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
         console.error("❌ MongoDB connection failed in worker", err);
         throw err;
@@ -40,11 +39,20 @@ async function startWorker() {
             if (!order) return;
 
             let token = await getToken();
-
+                const {
+                _id,
+                __v,
+                userId,
+                status,
+                trackingId,
+                ...rawPayload
+                } = order.toObject();
+           
+            
             try {
                 const res = await axios.post(
                     `${baseURL}/services/manifest/`,
-                    order,
+                    [rawPayload],
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -56,6 +64,8 @@ async function startWorker() {
                 order.status =
                     res.data?.successResponse?.[0]?.status || "IN_TRANSIT";
 
+                // console.log(res, 59);
+                
                 order.trackingId =
                     res.data?.successResponse?.[0]?.awbNumber ||
                     "TRK_" + Date.now();
@@ -65,6 +75,7 @@ async function startWorker() {
                 console.log("Order saved:", order._id);
 
             } catch (err: any) {
+                console.log(err, 82);
                 if (err.response?.status === 401) {
                     console.log("Token expired, retrying...");
 

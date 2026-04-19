@@ -10,13 +10,12 @@ export const generateUUID = (): string => {
   return uuidv4();
 };
 export const createOrder = async (order: any) => {
-  console.log("Incoming data:", order);
 
   const token = await getToken();
 
   const orderNumber = generateUUID();;
 
-
+  console.log(order, 18);
   const savedOrder = await Order.create({
     userId: order.customerCode || "guest",
     orderNumber,
@@ -24,9 +23,7 @@ export const createOrder = async (order: any) => {
     status : "Create"
   });
 
-  console.log("Saved Order:", savedOrder);
-
-  await orderQueue.add("processOrder", {
+  await orderQueue.add("orderQueue", {
     orderId: savedOrder._id.toString()
   });
     

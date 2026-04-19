@@ -1,4 +1,4 @@
-import mongoose, { Document,Schema } from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface OrderDocument extends Document {
   userId: string;
@@ -37,6 +37,17 @@ export interface OrderDocument extends Document {
   invoiceNumber: string;
   invoiceDate: string;
   invoiceValue: number;
+
+  shprName: String,
+  shprAddress: String,
+  shprAddressType: String,
+  shprCity: String,
+  shprState: String,
+  shprPincode: Number,
+  shprMobile: Number,
+  rtnCountry: String,
+  consAddressType: String,
+  itemQuantity: Number
 }
 
 
@@ -77,7 +88,17 @@ const OrderSchema = new Schema(
 
     invoiceNumber: String,
     invoiceDate: String,
-    invoiceValue: Number
+    invoiceValue: Number,
+    shprName: String,
+    shprAddress: String,
+    shprAddressType: String,
+    shprCity: String,
+    shprState: String,
+    shprPincode: Number,
+    shprMobile: Number,
+    rtnCountry: String,
+    consAddressType: String,
+    itemQuantity: Number
   },
   { timestamps: true }
 );
