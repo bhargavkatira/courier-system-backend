@@ -44,7 +44,7 @@ async function startWorker() {
             try {
                 const res = await axios.post(
                     `${baseURL}/services/manifest/`,
-                    order.payload,
+                    order,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -74,7 +74,7 @@ async function startWorker() {
 
                     const retry = await axios.post(
                         `${baseURL}/services/manifest/`,
-                        order.payload,
+                        order,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,
