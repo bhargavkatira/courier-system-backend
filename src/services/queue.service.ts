@@ -48,7 +48,6 @@ async function startWorker() {
                 ...rawPayload
                 } = order.toObject();
            
-            
             try {
                 const res = await axios.post(
                     `${baseURL}/services/manifest/`,
@@ -75,7 +74,6 @@ async function startWorker() {
                 console.log("Order saved:", order._id);
 
             } catch (err: any) {
-                console.log(err, 82);
                 if (err.response?.status === 401) {
                     console.log("Token expired, retrying...");
 
@@ -110,11 +108,12 @@ async function startWorker() {
                 order.status = "FAILED";
                 await order.save();
             }
+                        return { delivered: true };
         },
         {
             connection : redisConnection, 
             limiter : {
-                 max : 1000,
+                 max : 1,
                  duration : 1000
             }
         }

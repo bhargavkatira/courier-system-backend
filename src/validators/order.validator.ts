@@ -50,3 +50,8 @@ export const orderSchema = z.object({
 
   itemQuantity: z.number()
 });
+
+
+export const orderParamsSchema = z.object({
+  id: z.string().min(1, "ID is required"),
+});

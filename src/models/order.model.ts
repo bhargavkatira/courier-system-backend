@@ -48,6 +48,13 @@ export interface OrderDocument extends Document {
   rtnCountry: String,
   consAddressType: String,
   itemQuantity: Number
+  shipmentStatus?: string;
+  scans?: {
+    statusCode: string;
+    status: string;
+    dateTime: string;
+    location: string;
+  }[];
 }
 
 
@@ -98,7 +105,16 @@ const OrderSchema = new Schema(
     shprMobile: Number,
     rtnCountry: String,
     consAddressType: String,
-    itemQuantity: Number
+    itemQuantity: Number,
+    shipmentStatus: String,
+    scans: [
+      {
+        statusCode: { type: String },
+        status: { type: String },
+        dateTime: { type: String },
+        location: { type: String },
+      },
+    ]
   },
   { timestamps: true }
 );
