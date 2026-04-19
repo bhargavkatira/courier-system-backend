@@ -8,18 +8,13 @@ const baseURL = config.BASE_URL;
 
 export const setToken = async (token: string, expiresIn: number) => {
   console.log("setToken called");
-
   const res = await redisConnection.set(
     "ub_token",
     token,
     "EX",
     expiresIn
   );
-
-  console.log("Redis SET response:", res);
-
   const stored = await redisConnection.get("ub_token");
-  console.log("Stored token:", stored);
 };
 
 
@@ -27,32 +22,52 @@ export const isTokenExpired = (): boolean => {
   return !token || Date.now() > tokenExpiry;
 };
 
-export const getToken = async (): Promise<string> => {
+export const getToken = async ()=> {
   const existingToken = await getStoredToken();
+  console.log(existingToken, 27)
   if (existingToken) return existingToken;
 
-  const res = await axios.post(
-    `${baseURL}/auth/getToken/`,
-    {
-      username: process.env.UB_USERNAME,
-      password: process.env.UB_PASSWORD
-    },
-    {
-      headers: {
-        "Content-Type": "application/json"
+  // const lock = await redisConnection.set(
+  //   "ub_token_lock",
+  //   "1",
+  //   "EX",
+  //   10,
+  //   "NX"
+  // );
+
+  // if (!lock) {
+  //   await new Promise((res) => setTimeout(res, 200));
+  //   return getToken();
+  // }
+
+  try {
+    const tokenAfterLock = await getStoredToken();
+    if (tokenAfterLock) return tokenAfterLock;
+    const res = await axios.post(
+      `${baseURL}/auth/getToken/`,
+      {
+        username: process.env.UB_USERNAME,
+        password: process.env.UB_PASSWORD
+      },
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
-    }
-  );
+    );
 
-  const newToken = res.data.access_token;
+    const newToken = res.data.access_token;
+    await redisConnection.set("test_key", "hello");
+    const val = await redisConnection.get("test_key");
 
+    await setToken(newToken, 23 * 60 * 60);
 
-  await redisConnection.set("test_key", "hello");
-  const val = await redisConnection.get("test_key");
-  
-  await setToken(newToken, 23 * 60 * 60);
+    return newToken;
+  }catch(error: any){
+    console.log(error?.message);
+    return null;
+  }
 
-  return newToken;
 };
 export const getStoredToken = async () => {
   return await redisConnection.get("ub_token");

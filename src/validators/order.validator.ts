@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 export const orderSchema = z.object({
+  userId: z.string(),
+  status: z.string(),
+
   customerCode: z.string().min(1),
 
   declaredValue: z.number().positive(),
@@ -34,5 +37,21 @@ export const orderSchema = z.object({
   invoiceDate: z.string(),
   invoiceValue: z.number(),
 
+  // 👇 ADD THESE
+  shprName: z.string().optional(),
+  shprAddress: z.string().optional(),
+  shprAddressType: z.string().optional(),
+  shprCity: z.string().optional(),
+  shprState: z.string().optional(),
+  shprPincode: z.number().optional(),
+  shprMobile: z.number().optional(),
+  rtnCountry: z.string().optional(),
+  consAddressType: z.string().optional(),
+
   itemQuantity: z.number()
+});
+
+
+export const orderParamsSchema = z.object({
+  id: z.string().min(1, "ID is required"),
 });

@@ -6,6 +6,7 @@ import express from "express";
 import { connectDB } from "./config/db";
 import { redisConnection } from "./config/redis";
 import orderRoutes from "./routes/ order.routes";
+import cancelRoutes from "./routes/cancelShipment.routes";
 import trackingRoutes from "./routes/tracking.routes";
 import { orderQueue } from "./services/queue.service";
 
@@ -47,3 +48,5 @@ app.use("/admin/queues", serverAdapter.getRouter());
 app.use("/api", orderRoutes);
 
 app.use("/api/tracking", trackingRoutes);
+
+app.use("/api/cancel", cancelRoutes);
