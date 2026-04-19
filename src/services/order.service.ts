@@ -16,18 +16,12 @@ export const createOrder = async (order: any) => {
 
   const orderNumber = generateUUID();;
 
-  // add validator, implicitly add data
-  const payload = [
-    {
-      ...order,
-      orderNumber
-    }
-  ];
 
   const savedOrder = await Order.create({
     userId: order.customerCode || "guest",
     orderNumber,
-    payload
+    ...order,
+    status : "Create"
   });
 
   console.log("Saved Order:", savedOrder);
