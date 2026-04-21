@@ -54,13 +54,9 @@ npm install
 ```
  Run Docker Container
 
- ```bash
+ ```bash 
 docker run -d -p 3001:3000 --env-file .env --name courier-app-container courier-app
 ```
-
-### 3️⃣ Start Redis
-
-
 
 ### 4️⃣ Run the application
 
